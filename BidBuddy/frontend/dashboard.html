@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProcureAI Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      🏛 JustBidIt
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="active">Dashboard</a>
+      <a>My Analyses</a>
+      <a>Saved Tenders</a>
+      <a>Settings</a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <button class="logout-btn">Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+  <header class="topbar">
+
+    <div class="top-left">
+      <h1>Dashboard</h1>
+
+      <nav class="feature-nav">
+        <a class="active">Analyze</a>
+        <a>History</a>
+        <a>Saved</a>
+        <a>Reports</a>
+      </nav>
+    </div>
+
+    <div class="profile-menu">
+      <div class="profile-trigger" onclick="toggleProfile()">
+        <div class="avatar">S</div>
+        <span>Shreya</span>
+      </div>
+
+      <div class="profile-dropdown" id="profileDropdown">
+        <a>My Profile</a>
+        <a>Account Settings</a>
+        <a class="logout">Logout</a>
+      </div>
+    </div>
+
+  </header>
+
+  <section class="upload-section">
+    <div class="upload-card" id="uploadCard">
+      <div class="upload-icon">📄</div>
+      <h3>Upload Tender Document</h3>
+      <p>Drag & drop your PDF or click to upload</p>
+      <input type="file" id="fileInput" hidden>
+      <button class="primary-btn" onclick="document.getElementById('fileInput').click()">
+        Choose File
+      </button>
+    </div>
+  </section>
+
+  <section class="results-section" id="resultsSection" style="display:none;">
+    <div class="result-card">
+      <h3>Eligibility Score</h3>
+      <div class="score">82%</div>
+      <p>You meet most of the eligibility criteria.</p>
+    </div>
+
+    <div class="result-card">
+      <h3>Key Requirements</h3>
+      <ul>
+        <li>✔ Turnover above ₹5 Cr</li>
+        <li>✔ EMD Required: ₹2,00,000</li>
+        <li>⚠ Experience: 3 similar projects needed</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+const fileInput = document.getElementById("fileInput");
+const resultsSection = document.getElementById("resultsSection");
+const uploadCard = document.getElementById("uploadCard");
+
+fileInput.addEventListener("change", () => {
+  uploadCard.innerHTML = "<h3>Analyzing Tender...</h3>";
+  setTimeout(() => {
+    resultsSection.style.display = "grid";
+    uploadCard.style.display = "none";
+  }, 2000);
+});
+</script>
+
+<script>
+function toggleProfile() {
+  const dropdown = document.getElementById("profileDropdown");
+  dropdown.style.display =
+    dropdown.style.display === "block" ? "none" : "block";
+}
+
+window.onclick = function(e) {
+  if (!e.target.closest('.profile-menu')) {
+    document.getElementById("profileDropdown").style.display = "none";
+  }
+};
+</script>
+
+
+</body>
+</html>

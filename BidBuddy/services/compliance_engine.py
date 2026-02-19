@@ -1,36 +1,16 @@
-# =============================================================
-#  services/compliance_engine.py — Compliance Scoring Engine
-# =============================================================
-#
-#  Two-layer architecture:
-#   Layer 1 (Rule Engine): Fast, deterministic, transparent scoring
-#                          based on hard eligibility criteria
-#   Layer 2 (AI Layer):    Gemini generates nuanced narrative
-#                          and strategic recommendations
-#
-#  Scoring model (100 points total):
-#   - Turnover compliance:         30 pts
-#   - Experience / Years:          20 pts
-#   - Required certifications:     20 pts
-#   - Past project value:          15 pts
-#   - Document readiness:          10 pts
-#   - MSME bonus (if applicable):  +5 pts bonus (can exceed 100)
-# =============================================================
 
 from typing import Dict, List, Tuple
 
-
-# ── Severity levels ───────────────────────────────────────────
-DISQUALIFYING = "DISQUALIFYING"   # Automatic rejection if unmet
-MAJOR         = "MAJOR"           # Significant weakness
-MINOR         = "MINOR"           # Minor gap, fixable
+DISQUALIFYING = "DISQUALIFYING"   
+MAJOR         = "MAJOR"           
+MINOR         = "MINOR"           
 
 
-# ── Point deductions per rule ─────────────────────────────────
+
 DEDUCTIONS = {
     "turnover":          30,
     "years_experience":  20,
-    "certifications":    20,   # Per missing cert: deduction / num_required
+    "certifications":    20,   
     "past_project":      15,
     "documents":         10,
 }
@@ -61,7 +41,7 @@ def score_compliance(tender_data: Dict, company_data: Dict) -> Dict:
 
     eligibility   = tender_data.get("eligibility", {})
 
-    # ── Rule 1: Annual Turnover ───────────────────────────────
+    
     required_turnover = eligibility.get("min_turnover")
     company_turnover  = company_data.get("annual_turnover", 0)
 

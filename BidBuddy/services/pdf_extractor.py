@@ -1,13 +1,3 @@
-# =============================================================
-#  services/pdf_extractor.py — PDF Text Extraction with pdfplumber
-# =============================================================
-#
-#  Responsibilities:
-#   - Extract raw text from uploaded tender PDFs
-#   - Handle multi-page documents
-#   - Detect section headers for smarter chunking
-#   - Report if a PDF is image-based (no extractable text)
-# =============================================================
 
 import pdfplumber
 import re
