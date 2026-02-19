@@ -10,7 +10,7 @@ body {
   color: #111827;
 }
 
-/* NAVBAR */
+
 
 .navbar {
   width: 100%;
@@ -76,7 +76,7 @@ body {
   margin: 0 8px;
 }
 
-/* HERO */
+
 
 .hero {
   padding: 120px 24px 100px;
@@ -163,7 +163,7 @@ body {
   margin-bottom: 20px;
 }
 
-/* CTA */
+
 
 .cta {
   padding: 80px 24px;
@@ -189,7 +189,7 @@ body {
   cursor: pointer;
 }
 
-/* FOOTER */
+
 
 footer {
   padding: 40px;
@@ -202,7 +202,7 @@ footer {
   background: #f3f4f6;
 }
 
-/* SIDEBAR */
+
 
 .sidebar {
   width: 240px;
@@ -244,7 +244,7 @@ footer {
   cursor: pointer;
 }
 
-/* MAIN */
+
 
 .main {
   flex: 1;
@@ -263,7 +263,7 @@ footer {
   font-size: 28px;
 }
 
-/* UPLOAD */
+
 
 .upload-section {
   margin-bottom: 40px;
@@ -287,7 +287,6 @@ footer {
   margin-bottom: 20px;
 }
 
-/* RESULTS */
 
 .results-section {
   display: grid;
