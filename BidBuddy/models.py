@@ -1,15 +1,3 @@
-# =============================================================
-#  models.py — SQLAlchemy ORM Models (Database Tables)
-# =============================================================
-#
-#  Tables defined here:
-#   1. User              — registered users of the platform
-#   2. Tender            — uploaded tender PDFs + extracted data
-#   3. CompanyProfile    — MSME company details for compliance checks
-#   4. ComplianceReport  — scoring results linking a Tender + Company
-#   5. BidDraft          — AI-generated bid proposal drafts
-#   6. CopilotSession    — conversation history for the AI copilot
-# =============================================================
 
 from sqlalchemy import (
     Column, Integer, String, Float, Text,
