@@ -1,64 +1,53 @@
-from groq import Groq
-import json
+# ai_copilot.py
+from dotenv import load_dotenv
 import os
+import json
 import re
 from typing import Dict, List, Optional
-from dotenv import load_dotenv
 
+# Load environment variables from .env
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-PROMPT_DIR   = os.path.join(os.path.dirname(__file__), "..", "prompts")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+REGION = os.getenv("REGION", "us-central1")
+CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
-client = None
-if GROQ_API_KEY and GROQ_API_KEY != "your_groq_api_key_here":
-    client = Groq(api_key=GROQ_API_KEY)
-    print("✅ Groq API configured successfully")
-else:
-    print("⚠️  GROQ_API_KEY not set. Add it to .env file.")
+from google.cloud import aiplatform
 
+# Initialize Vertex AI
+aiplatform.init(project=PROJECT_ID, location=REGION)
 
-def _load_prompt(filename: str) -> str:
+def _call_vertex(prompt: str, temperature: float = 0.3, max_output_tokens: int = 2048) -> str:
+    """
+    Call Vertex AI Text Generation (Gemini) model.
+    """
     try:
-        with open(os.path.join(PROMPT_DIR, filename)) as f:
-            return f.read()
-    except FileNotFoundError:
-        return ""
-
-
-def _call_groq(prompt: str, temperature: float = 0.1, max_tokens: int = 2048) -> str:
-    if not client:
-        raise Exception("Groq API key not configured. Add GROQ_API_KEY to .env")
-    response = client.chat.completions.create(
-        model       = "llama-3.3-70b-versatile",
-        messages    = [{"role": "user", "content": prompt}],
-        temperature = temperature,
-        max_tokens  = max_tokens,
-    )
-    return response.choices[0].message.content
+        model = aiplatform.TextGenerationModel.from_prebuilt("text-bison@001")  # Replace with Gemini model if available
+        response = model.predict(
+            prompt,
+            temperature=temperature,
+            max_output_tokens=max_output_tokens,
+        )
+        return response.text
+    except Exception as e:
+        return f"Vertex AI call failed: {str(e)}"
 
 
 def _parse_json(raw: str) -> Optional[Dict]:
-    """
-    Aggressively try to extract valid JSON from LLM response.
-    Handles markdown fences, leading text, trailing text, etc.
-    """
     text = raw.strip()
-
-    # Remove markdown fences
     text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.MULTILINE)
     text = re.sub(r'```\s*$', '', text, flags=re.MULTILINE)
     text = text.strip()
 
-    # Try direct parse first
+    # Try parsing directly
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # Find the FIRST { and LAST } and extract everything between
+    # Extract first { … } block
     start = text.find('{')
-    end   = text.rfind('}')
+    end = text.rfind('}')
     if start != -1 and end != -1 and end > start:
         candidate = text[start:end+1]
         try:
@@ -66,7 +55,7 @@ def _parse_json(raw: str) -> Optional[Dict]:
         except json.JSONDecodeError:
             pass
 
-    # Try fixing common issues: trailing commas before } or ]
+    # Fix common trailing comma issues
     try:
         fixed = re.sub(r',\s*([}\]])', r'\1', text[start:end+1] if start != -1 else text)
         return json.loads(fixed)
@@ -77,9 +66,6 @@ def _parse_json(raw: str) -> Optional[Dict]:
 
 
 def extract_tender_structure(raw_text: str, sections: Optional[Dict] = None) -> Dict:
-    if not client:
-        return {"error": "Groq API key not configured. Add GROQ_API_KEY to .env"}
-
     if sections:
         relevant = ""
         for key in ["eligibility criteria", "eligibility requirement", "pre-qualification",
@@ -90,16 +76,14 @@ def extract_tender_structure(raw_text: str, sections: Optional[Dict] = None) -> 
     else:
         text_to_send = raw_text[:6000]
 
-    # Very explicit prompt — forces JSON only
     prompt = f"""You are a government tender analyst. Extract structured data from the tender text below.
 
 CRITICAL INSTRUCTIONS:
-- Your response must start with {{ and end with }}
-- Do NOT write any text before or after the JSON
-- Do NOT use markdown code fences
-- Return ONLY the raw JSON object
+- Return ONLY JSON
+- Start with {{ and end with }}
+- Do NOT include text or markdown fences
 
-Use this exact schema:
+Use this schema:
 {{
   "tender_id": null,
   "title": "string",
@@ -122,54 +106,39 @@ Use this exact schema:
   "contract_duration": null
 }}
 
-Rules:
-- Use null for missing values, [] for empty lists
-- All money values in INR Lakhs (1 Crore = 100 Lakhs)
-- Do NOT guess values not explicitly in the document
-
 TENDER TEXT:
 {text_to_send}"""
 
-    try:
-        raw_response = _call_groq(prompt, temperature=0.0, max_tokens=2048)
-        parsed = _parse_json(raw_response)
-
-        if parsed is None:
-            # Last resort: return a minimal valid structure so the upload doesn't fail
-            print(f"WARNING: Could not parse JSON. Raw response preview: {raw_response[:200]}")
-            return {
-                "tender_id": None,
-                "title": "Tender (manual review needed)",
-                "issuing_authority": "Unknown",
-                "deadline": None,
-                "estimated_value": None,
-                "eligibility": {
-                    "min_turnover": None,
-                    "years_experience": None,
-                    "required_certifications": [],
-                    "msme_preference": False,
-                    "past_project_requirement": None,
-                    "min_single_project_value": None,
-                    "other_requirements": []
-                },
-                "documents_required": [],
-                "key_clauses": [],
-                "sector": "Unknown",
-                "bid_security": None,
-                "contract_duration": None,
-                "_note": "AI extraction failed — please check raw_text and retry"
-            }
-
-        return parsed
-
-    except Exception as e:
-        return {"error": f"Groq API error: {str(e)}"}
+    raw_response = _call_vertex(prompt, temperature=0.0, max_output_tokens=2048)
+    parsed = _parse_json(raw_response)
+    if parsed is None:
+        print(f"WARNING: Could not parse JSON. Preview: {raw_response[:200]}")
+        return {
+            "tender_id": None,
+            "title": "Tender (manual review needed)",
+            "issuing_authority": "Unknown",
+            "deadline": None,
+            "estimated_value": None,
+            "eligibility": {
+                "min_turnover": None,
+                "years_experience": None,
+                "required_certifications": [],
+                "msme_preference": False,
+                "past_project_requirement": None,
+                "min_single_project_value": None,
+                "other_requirements": []
+            },
+            "documents_required": [],
+            "key_clauses": [],
+            "sector": "Unknown",
+            "bid_security": None,
+            "contract_duration": None,
+            "_note": "AI extraction failed — check raw_text"
+        }
+    return parsed
 
 
 def generate_bid_draft(tender_data: Dict, company_data: Dict, additional_context: Optional[str] = None) -> str:
-    if not client:
-        return "Error: Groq API key not configured."
-
     projects = company_data.get("past_projects", [])
     projects_text = "\n".join([
         f"  - {p.get('name')}: Rs.{p.get('value')}L, Client: {p.get('client')}, Year: {p.get('year')}"
@@ -208,18 +177,13 @@ Write a complete bid proposal in Markdown with these sections:
 8. Compliance Declarations
 9. Document Index
 
-Use formal language. Be specific. Reference actual values from above.
+Use formal language and reference actual values from above.
 """
-    try:
-        return _call_groq(prompt, temperature=0.4, max_tokens=4096)
-    except Exception as e:
-        return f"Error generating draft: {str(e)}"
+
+    return _call_vertex(prompt, temperature=0.4, max_output_tokens=4096)
 
 
 def copilot_answer(tender_data: Dict, question: str, conversation_history: List[Dict]) -> str:
-    if not client:
-        return "Error: Groq API key not configured."
-
     history_text = ""
     for msg in conversation_history[-6:]:
         role = "User" if msg["role"] == "user" else "Assistant"
@@ -230,23 +194,17 @@ def copilot_answer(tender_data: Dict, question: str, conversation_history: List[
 TENDER CONTEXT:
 {json.dumps(tender_data, indent=2)}
 
-{f'PREVIOUS CONVERSATION:{chr(10)}{history_text}' if history_text else ''}
+{f'PREVIOUS CONVERSATION:\n{history_text}' if history_text else ''}
 
 USER QUESTION: {question}
 
 Answer clearly and specifically based on the tender context.
 Reference data directly. Be concise and actionable.
 """
-    try:
-        return _call_groq(prompt, temperature=0.3, max_tokens=1024)
-    except Exception as e:
-        return f"Error: {str(e)}"
+    return _call_vertex(prompt, temperature=0.3, max_output_tokens=1024)
 
 
 def analyze_compliance_gaps(tender_data: Dict, company_data: Dict, gaps: List[Dict]) -> str:
-    if not client:
-        return "AI analysis unavailable — add GROQ_API_KEY to .env"
-
     prompt = f"""You are a senior procurement consultant analyzing an MSME's eligibility for a government tender.
 
 TENDER: {tender_data.get('title')} | Authority: {tender_data.get('issuing_authority')}
@@ -269,7 +227,4 @@ Write a 3-4 paragraph strategic analysis:
 
 Be encouraging but realistic. Use Indian procurement context.
 """
-    try:
-        return _call_groq(prompt, temperature=0.5, max_tokens=1024)
-    except Exception as e:
-        return f"AI analysis failed: {str(e)}"
+    return _call_vertex(prompt, temperature=0.5, max_output_tokens=1024)
