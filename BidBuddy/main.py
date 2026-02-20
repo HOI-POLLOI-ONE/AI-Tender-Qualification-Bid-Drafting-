@@ -1,22 +1,23 @@
-# ── Analyze Tender (Simple Demo Endpoint for Frontend) ─────────
+from fastapi import FastAPI
+from database import Base, engine
+from routers import (
+    auth_router,
+    company_router,
+    tender_router,
+    compliance_router,
+    bid_router,
+    copilot_router
+)
 
-from fastapi import FastAPI, UploadFile, File
+# Create tables
+Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="AI Tender Intelligence & Bid Copilot")
 
-@app.post("/analyze", tags=["Demo"])
-async def analyze(file: UploadFile = File(...)):
-    content = await file.read()
-
-    # TODO: Connect real AI logic here
-    # For now returning mock response for dashboard
-
-    return {
-        "success": True,
-        "score": 82,
-        "requirements": [
-            "Turnover above ₹5 Cr",
-            "EMD Required: ₹2,00,000",
-            "3 similar projects needed"
-        ]
-    }
+# Routers
+app.include_router(auth_router.router, prefix="/auth", tags=["Authentication"])
+app.include_router(company_router.router, prefix="/company", tags=["Company"])
+app.include_router(tender_router.router, prefix="/tender", tags=["Tender"])
+app.include_router(compliance_router.router, prefix="/compliance", tags=["Compliance"])
+app.include_router(bid_router.router, prefix="/bid", tags=["Bid Drafts"])
+app.include_router(copilot_router.router, prefix="/copilot", tags=["AI Copilot"])
