@@ -2,6 +2,7 @@
 #  auth.py — Authentication Utilities (JWT + Password Hashing)
 # =============================================================
 
+
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -71,6 +72,8 @@ def get_current_user(
         detail="Invalid or expired authentication token",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    print("CREDENTIALS:", credentials)
 
     if not credentials:
         raise credentials_exception

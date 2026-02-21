@@ -2,11 +2,12 @@
 #  routers/auth_router.py — User Registration & Login Endpoints
 # =============================================================
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from database import get_db
-from auth import hash_password, verify_password, create_access_token
+from auth import hash_password, verify_password, create_access_token, decode_access_token
 import models, schemas
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -14,13 +15,6 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=schemas.UserOut, status_code=201)
 def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
-    """
-    Register a new user account.
-
-    - Email must be unique
-    - Password is hashed before storage (never stored in plain text)
-    """
-    # Check if email already in use
     existing = db.query(models.User).filter(models.User.email == user_data.email).first()
     if existing:
         raise HTTPException(
@@ -41,12 +35,6 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=schemas.Token)
 def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
-    """
-    Login with email + password. Returns a JWT bearer token.
-
-    Use the returned token in the Authorization header for protected routes:
-        Authorization: Bearer <token>
-    """
     user = db.query(models.User).filter(models.User.email == login_data.email).first()
 
     if not user or not verify_password(login_data.password, user.hashed_password):
@@ -66,7 +54,19 @@ def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=schemas.UserOut)
-def get_me(db: Session = Depends(get_db)):
-    """Placeholder — returns info about the authenticated user."""
-    # Full implementation uses get_current_user dependency (see main.py)
-    raise HTTPException(status_code=401, detail="Provide Authorization: Bearer <token>")
+def get_me(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    """Returns the currently authenticated user based on JWT token."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+
+    token = authorization.split(" ", 1)[1]
+    email = decode_access_token(token)
+
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user

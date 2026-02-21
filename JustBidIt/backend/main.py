@@ -35,14 +35,14 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title       = os.getenv("APP_NAME", "Procurement Intelligence Platform"),
     description = """
-## 🏛️ AI-Powered Procurement Intelligence Platform for MSMEs
+## JustBidIt - AI-Powered Procurement Intelligence
 
 This API helps MSMEs participate more effectively in Indian government tenders by:
 
-- **📄 Tender Extraction**: Upload tender PDFs → get structured eligibility data
-- **✅ Compliance Scoring**: Check your company's eligibility with a detailed score
-- **📝 Bid Draft Generation**: AI-generated professional bid proposals
-- **🤖 AI Copilot**: Ask questions about any tender in natural language
+- ** Tender Extraction**: Upload tender PDFs → get structured eligibility data
+- ** Compliance Scoring**: Check your company's eligibility with a detailed score
+- ** Bid Draft Generation**: AI-generated professional bid proposals
+- ** AI Copilot**: Ask questions about any tender in natural language
 
 ### Quick Start
 1. Upload a tender PDF via `POST /tenders/upload`
@@ -52,7 +52,7 @@ This API helps MSMEs participate more effectively in Indian government tenders b
 5. Ask questions via `POST /copilot/ask`
 
 ### Authentication
-Most endpoints work without authentication (for hackathon demo).
+Most endpoints work without authentication (for demo)
 Use `POST /auth/register` + `POST /auth/login` to get a JWT token for full access.
     """,
     version     = "1.0.0-mvp",
