@@ -39,10 +39,10 @@ app = FastAPI(
 
 This API helps MSMEs participate more effectively in Indian government tenders by:
 
-- ** Tender Extraction**: Upload tender PDFs → get structured eligibility data
-- ** Compliance Scoring**: Check your company's eligibility with a detailed score
-- ** Bid Draft Generation**: AI-generated professional bid proposals
-- ** AI Copilot**: Ask questions about any tender in natural language
+- **Tender Extraction**: Upload tender PDFs → get structured eligibility data
+- **Compliance Scoring**: Check your company's eligibility with a detailed score
+- **Bid Draft Generation**: AI-generated professional bid proposals
+- **AI Copilot**: Ask questions about any tender in natural language
 
 ### Quick Start
 1. Upload a tender PDF via `POST /tenders/upload`
@@ -86,7 +86,7 @@ app.include_router(copilot.router)
 @app.get("/", tags=["Health"])
 def root():
     return {
-        "status":  "✅ Procurement Intelligence Platform is running",
+        "status":  "✓Procurement Intelligence Platform is running",
         "version": "1.0.0-mvp",
         "docs":    "/docs",
         "message": "Welcome! Visit /docs to explore and test all API endpoints."
@@ -103,13 +103,13 @@ def health_check():
     import os
 
     gemini_key    = os.getenv("GEMINI_API_KEY", "")
-    gemini_status = "✅ Configured" if (gemini_key and gemini_key != "your_gemini_api_key_here") else "❌ Not configured (AI features disabled)"
+    gemini_status = "✓Configured" if (gemini_key and gemini_key != "your_gemini_api_key_here") else "(X) Not configured (AI features disabled)"
 
     return {
         "status":       "healthy",
-        "database":     "✅ SQLite connected",
+        "database":     "✓SQLite connected",
         "gemini_api":   gemini_status,
-        "uploads_dir":  "✅ Ready" if os.path.exists("uploads") else "❌ Missing",
+        "uploads_dir":  "✓Ready" if os.path.exists("uploads") else "(X)Missing",
     }
 
 

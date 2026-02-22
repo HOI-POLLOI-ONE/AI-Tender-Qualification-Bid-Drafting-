@@ -301,19 +301,19 @@ def _generate_recommendations(
 
         if "Turnover" in field:
             recs.append(
-                "📊 Turnover Gap: Consider forming a consortium or joint venture (JV) "
+                "Turnover Gap: Consider forming a consortium or joint venture (JV) "
                 "with another eligible company. Under GFR Rule 160, JV turnover is "
                 "typically aggregated for eligibility purposes."
             )
             recs.append(
-                "📋 Alternative: Check if the tender allows NSIC/MSME exemption on "
+                "Alternative: Check if the tender allows NSIC/MSME exemption on "
                 "turnover criteria — many central government tenders exempt MSMEs "
                 "from turnover requirements up to certain contract values."
             )
 
         elif "Experience" in field:
             recs.append(
-                "🏆 Experience Gap: Document any projects that are even partially related "
+                "Experience Gap: Document any projects that are even partially related "
                 "to the tender scope. Reframe experience from adjacent sectors if applicable. "
                 "Check if apprenticeship/sub-contract experience counts under tender rules."
             )
@@ -323,29 +323,29 @@ def _generate_recommendations(
             for cert in missing:
                 if "ISO" in cert:
                     recs.append(
-                        f"📜 Certification: Obtain {cert} through a BIS-accredited certification body. "
+                        f"Certification: Obtain {cert} through a BIS-accredited certification body. "
                         "Fast-track ISO certification typically takes 4–8 weeks and costs ₹25,000–₹80,000. "
                         "Bodies: TÜV SÜD, Bureau Veritas, DNV."
                     )
                 elif "MSME" in cert or "Udyam" in cert:
                     recs.append(
-                        "📜 Udyam Registration: Register at udyamregistration.gov.in — it's free, "
+                        "Udyam Registration: Register at udyamregistration.gov.in — it's free, "
                         "instant, and based on Aadhaar. This is critical for accessing MSME benefits."
                     )
                 elif "GeM" in cert:
                     recs.append(
-                        "🛒 GeM Registration: Register as a seller at gem.gov.in. "
+                        "GeM Registration: Register as a seller at gem.gov.in. "
                         "It's free and enables direct access to government procurement opportunities."
                     )
                 else:
                     recs.append(
-                        f"📜 Certification: Pursue {cert} through the relevant regulatory body "
+                        f"Certification: Pursue {cert} through the relevant regulatory body "
                         "before bid submission."
                     )
 
         elif "Past Project" in field:
             recs.append(
-                "🏗️ Project Experience: If direct experience is lacking, explore sub-contracting "
+                "Project Experience: If direct experience is lacking, explore sub-contracting "
                 "to a prime bidder who qualifies, then bid independently once you have qualifying projects. "
                 "Alternatively, form a JV with a company that has the required project experience."
             )
@@ -353,7 +353,7 @@ def _generate_recommendations(
         elif "Document" in field:
             missing_docs = gap.get("missing", [])
             recs.append(
-                f"📁 Documents: Gather missing documents before bid submission: "
+                f"Documents: Gather missing documents before bid submission: "
                 f"{', '.join(missing_docs)}. "
                 "Most documents like audited balance sheets, IT returns, and registration "
                 "certificates should be collected 2–3 weeks before the deadline."
@@ -361,7 +361,7 @@ def _generate_recommendations(
 
     if not recs:
         recs.append(
-            "✅ Company appears to meet all major eligibility criteria. "
+            "✓Company appears to meet all major eligibility criteria. "
             "Focus on preparing a strong technical bid with well-documented past projects "
             "and a competitive financial proposal."
         )
