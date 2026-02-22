@@ -47,14 +47,14 @@ def ask_copilot(
         )
 
     # ── Get or create session ──
+    session = None
     if request.session_id:
         session = db.query(models.CopilotSession).filter(
             models.CopilotSession.id == request.session_id
         ).first()
-        if not session:
-            raise HTTPException(status_code=404, detail="Copilot session not found")
-    else:
-        # Start a new session
+
+    # Create new session if none found or session_id was invalid
+    if not session:
         session = models.CopilotSession(
             tender_id = request.tender_id,
             messages  = []

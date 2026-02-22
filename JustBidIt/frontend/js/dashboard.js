@@ -1,6 +1,48 @@
 /* ── JustBidIt Dashboard Logic ──────────────────────────────── */
 
 const tagLists = { certList: [], docList: [] };
+let projectList = [];
+
+function addProject() {
+  const name   = document.getElementById("projName").value.trim();
+  const client = document.getElementById("projClient").value.trim();
+  const value  = parseFloat(document.getElementById("projValue").value);
+  const year   = parseInt(document.getElementById("projYear").value);
+
+  if (!name || !client) { showToast("Project name and client are required", "error"); return; }
+
+  projectList.push({ name, client, value: value || 0, year: year || new Date().getFullYear() });
+  renderProjects();
+
+  // Clear inputs
+  document.getElementById("projName").value   = "";
+  document.getElementById("projClient").value = "";
+  document.getElementById("projValue").value  = "";
+  document.getElementById("projYear").value   = "";
+}
+
+function removeProject(index) {
+  projectList.splice(index, 1);
+  renderProjects();
+}
+
+function renderProjects() {
+  const container = document.getElementById("projectsList");
+  if (!container) return;
+  if (projectList.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = projectList.map((p, i) => `
+    <div style="background:var(--ink-3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div>
+        <div style="font-weight:600;font-size:0.875rem;color:var(--text);">${p.name}</div>
+        <div style="font-size:0.78rem;color:var(--text-3);font-family:var(--font-mono);">${p.client} &nbsp;·&nbsp; Rs.${p.value}L &nbsp;·&nbsp; ${p.year}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red);flex-shrink:0;" onclick="removeProject(${i})">Remove</button>
+    </div>
+  `).join("");
+}
 
 /* ── Init ────────────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
@@ -272,12 +314,7 @@ async function doSaveCompany() {
     showToast("Company name, turnover and years are required", "error"); return;
   }
 
-  let pastProjects = [];
-  const raw = document.getElementById("pastProjects").value.trim();
-  if (raw) {
-    try { pastProjects = JSON.parse(raw); }
-    catch { showToast("Past projects JSON is invalid", "error"); return; }
-  }
+  const pastProjects = [...projectList];
 
   try {
     const data = await saveCompany({
@@ -306,7 +343,7 @@ async function doSaveCompany() {
       msme:      document.getElementById("msmeCategory").value,
       certs:     tagLists.certList,
       docs:      tagLists.docList,
-      projects:  document.getElementById("pastProjects").value,
+      projects:  JSON.stringify(projectList),
     }));
 
     document.getElementById("companySavedBadge").style.display = "inline-block";
@@ -330,7 +367,7 @@ function loadSavedCompanyForm() {
     document.getElementById("regNum").value         = f.reg || "";
     document.getElementById("udyamNum").value       = f.udyam || "";
     document.getElementById("msmeCategory").value   = f.msme || "";
-    document.getElementById("pastProjects").value   = f.projects || "";
+    try { if (f.projects) { projectList = JSON.parse(f.projects); renderProjects(); } } catch {}
     if (f.certs) { tagLists.certList = [...f.certs]; renderTagList("certList","certInput","certWrap"); }
     if (f.docs)  { tagLists.docList  = [...f.docs];  renderTagList("docList","docInput","docWrap");   }
     if (state.companyId) document.getElementById("companySavedBadge").style.display = "inline-block";
