@@ -1,37 +1,18 @@
-# =============================================================
-#  main.py — FastAPI Application Entry Point
-# =============================================================
-#
-#  To run:
-#     uvicorn main:app --reload
-#
-#  Then open:
-#     http://localhost:8000/docs     ← Swagger UI (test all endpoints)
-#     http://localhost:8000/redoc    ← Alternative API docs
-# =============================================================
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Import database engine and base — creates tables on startup
 from database import engine
 import models
 
-# Import all routers
 from routers import auth_router, tender, company, compliance, copilot
 
-# ── Create all database tables ────────────────────────────────
-# This is safe to call on every startup — SQLAlchemy only creates
-# tables that don't exist yet (it won't overwrite existing data)
 models.Base.metadata.create_all(bind=engine)
 
-# ── Initialize FastAPI App ─────────────────────────────────────
 app = FastAPI(
     title       = os.getenv("APP_NAME", "Procurement Intelligence Platform"),
     description = """
@@ -64,17 +45,14 @@ Use `POST /auth/register` + `POST /auth/login` to get a JWT token for full acces
     }
 )
 
-# ── CORS Middleware ────────────────────────────────────────────
-# Allows the frontend (React/Next.js) to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = ["*"],      # In production: specify your frontend URL
+    allow_origins     = ["*"],
     allow_credentials = True,
     allow_methods     = ["*"],
     allow_headers     = ["*"],
 )
 
-# ── Register Routers ───────────────────────────────────────────
 app.include_router(auth_router.router)
 app.include_router(tender.router)
 app.include_router(company.router)
@@ -82,7 +60,6 @@ app.include_router(compliance.router)
 app.include_router(copilot.router)
 
 
-# ── Root Endpoint ──────────────────────────────────────────────
 @app.get("/", tags=["Health"])
 def root():
     return {
@@ -93,13 +70,9 @@ def root():
     }
 
 
-# ── Health Check ──────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
 def health_check():
-    """
-    Simple health check endpoint.
-    Returns database status and API key configuration status.
-    """
+    """Simple health check endpoint."""
     import os
 
     gemini_key    = os.getenv("GEMINI_API_KEY", "")
@@ -113,13 +86,9 @@ def health_check():
     }
 
 
-# ── Global Exception Handler ──────────────────────────────────
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """
-    Catch-all error handler — returns clean JSON instead of server crash pages.
-    In production, you'd log these to a monitoring service.
-    """
+    """Catch-all error handler."""
     return JSONResponse(
         status_code=500,
         content={
@@ -128,3 +97,4 @@ async def global_exception_handler(request: Request, exc: Exception):
             "detail":  str(exc)
         }
     )
+

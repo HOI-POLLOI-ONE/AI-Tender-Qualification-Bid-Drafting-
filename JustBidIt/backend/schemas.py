@@ -1,24 +1,7 @@
-# =============================================================
-#  schemas.py — Pydantic Models for Request/Response Validation
-# =============================================================
-#
-#  Pydantic schemas define what data comes IN through API
-#  requests and what goes OUT in responses.
-#
-#  Naming convention:
-#    XxxCreate  — data needed to create a new record
-#    XxxUpdate  — data that can be updated (all fields optional)
-#    XxxOut     — what the API returns (safe, no passwords etc.)
-# =============================================================
-
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Any, Dict
 from datetime import datetime
 
-
-# ==============================================================
-# AUTH / USER
-# ==============================================================
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -34,7 +17,7 @@ class UserOut(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True   # Allows converting SQLAlchemy models directly
+        from_attributes = True
 
 
 class Token(BaseModel):
@@ -51,12 +34,8 @@ class LoginRequest(BaseModel):
     password: str
 
 
-# ==============================================================
-# TENDER
-# ==============================================================
-
 class EligibilityInfo(BaseModel):
-    min_turnover: Optional[float] = None          # In INR Lakhs
+    min_turnover: Optional[float] = None
     years_experience: Optional[int] = None
     required_certifications: List[str] = []
     msme_preference: bool = False
@@ -106,14 +85,10 @@ class TenderListItem(BaseModel):
         from_attributes = True
 
 
-# ==============================================================
-# COMPANY PROFILE
-# ==============================================================
-
 class PastProject(BaseModel):
     name: str
     client: str
-    value: float          # In INR Lakhs
+    value: float
     year: int
     sector: Optional[str] = None
 
@@ -130,7 +105,7 @@ class CompanyProfileCreate(BaseModel):
     sectors: List[str] = []
     past_projects: List[PastProject] = []
     available_documents: List[str] = []
-    msme_category: Optional[str] = None   # micro | small | medium
+    msme_category: Optional[str] = None
 
 
 class CompanyProfileUpdate(BaseModel):
@@ -166,15 +141,11 @@ class CompanyProfileOut(BaseModel):
         from_attributes = True
 
 
-# ==============================================================
-# COMPLIANCE
-# ==============================================================
-
 class ComplianceGap(BaseModel):
     field: str
     required: Any
     actual: Any
-    severity: str        # DISQUALIFYING | MAJOR | MINOR
+    severity: str
     deduction: float
     note: Optional[str] = None
 
@@ -199,6 +170,51 @@ class ComplianceReportOut(BaseModel):
         from_attributes = True
 
 
+class DraftRequest(BaseModel):
+    tender_id: int
+    company_id: int
+    additional_context: Optional[str] = None
+
+
+class BidDraftOut(BaseModel):
+    id: int
+    tender_id: int
+    draft_text: str
+    version: int
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CopilotMessage(BaseModel):
+    role: str
+    content: str
+
+
+class CopilotAskRequest(BaseModel):
+    tender_id: int
+    session_id: Optional[int] = None
+    question: str
+
+
+class CopilotResponse(BaseModel):
+    session_id: int
+    answer: str
+    conversation: List[CopilotMessage]
+
+
+class SuccessResponse(BaseModel):
+    success: bool = True
+    message: str
+
+
+class ErrorResponse(BaseModel):
+    success: bool = False
+    error: str
+    detail: Optional[str] = None
+
 # ==============================================================
 # BID DRAFT
 # ==============================================================
@@ -206,7 +222,7 @@ class ComplianceReportOut(BaseModel):
 class DraftRequest(BaseModel):
     tender_id: int
     company_id: int
-    additional_context: Optional[str] = None    # Any extra info the user wants to add
+    additional_context: Optional[str] = None
 
 
 class BidDraftOut(BaseModel):
@@ -226,13 +242,13 @@ class BidDraftOut(BaseModel):
 # ==============================================================
 
 class CopilotMessage(BaseModel):
-    role: str     # "user" or "assistant"
+    role: str
     content: str
 
 
 class CopilotAskRequest(BaseModel):
     tender_id: int
-    session_id: Optional[int] = None    # If None, starts a new session
+    session_id: Optional[int] = None
     question: str
 
 

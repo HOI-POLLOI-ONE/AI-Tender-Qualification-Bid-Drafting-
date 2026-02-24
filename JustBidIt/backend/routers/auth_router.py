@@ -55,7 +55,6 @@ def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=schemas.UserOut)
 def get_me(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
-    """Returns the currently authenticated user based on JWT token."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
 

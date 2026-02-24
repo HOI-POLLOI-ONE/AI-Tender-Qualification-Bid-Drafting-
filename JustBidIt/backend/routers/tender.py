@@ -15,7 +15,8 @@ from services import pdf_extractor, gemini_client
 
 router = APIRouter(prefix="/tenders", tags=["Tenders"])
 
-UPLOAD_DIR = "uploads"
+# Use absolute path for uploads directory to avoid issues with changing working directories
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".pdf"}

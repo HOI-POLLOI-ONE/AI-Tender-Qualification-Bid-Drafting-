@@ -14,25 +14,17 @@ router = APIRouter(prefix="/companies", tags=["Company Profiles"])
 
 
 def _compute_max_project_value(past_projects: List[dict]) -> float:
-    """Extract the highest single project value from past projects list."""
     if not past_projects:
         return 0.0
     return max(p.get("value", 0) for p in past_projects)
 
 
-# ── POST /companies ────────────────────────────────────────────
 @router.post("/", response_model=schemas.CompanyProfileOut, status_code=201)
 def create_company_profile(
     data: schemas.CompanyProfileCreate,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_user)
 ):
-    """
-    Create a new company profile.
-
-    This profile is used for compliance scoring against tenders.
-    The more complete the profile, the more accurate the scoring.
-    """
     past_projects = [p.dict() for p in data.past_projects]
     max_project   = _compute_max_project_value(past_projects)
 
@@ -58,21 +50,17 @@ def create_company_profile(
     return company
 
 
-# ── GET /companies ─────────────────────────────────────────────
 @router.get("/", response_model=List[schemas.CompanyProfileOut])
 def list_companies(
     skip:  int = 0,
     limit: int = 20,
     db: Session = Depends(get_db)
 ):
-    """List all company profiles."""
     return db.query(models.CompanyProfile).offset(skip).limit(limit).all()
 
 
-# ── GET /companies/{id} ────────────────────────────────────────
 @router.get("/{company_id}", response_model=schemas.CompanyProfileOut)
 def get_company(company_id: int, db: Session = Depends(get_db)):
-    """Get a specific company profile."""
     company = db.query(models.CompanyProfile).filter(
         models.CompanyProfile.id == company_id
     ).first()
@@ -84,14 +72,12 @@ def get_company(company_id: int, db: Session = Depends(get_db)):
     return company
 
 
-# ── PUT /companies/{id} ────────────────────────────────────────
 @router.put("/{company_id}", response_model=schemas.CompanyProfileOut)
 def update_company(
     company_id: int,
     data: schemas.CompanyProfileUpdate,
     db: Session = Depends(get_db)
 ):
-    """Update a company profile. Only provided fields are updated."""
     company = db.query(models.CompanyProfile).filter(
         models.CompanyProfile.id == company_id
     ).first()
@@ -100,7 +86,6 @@ def update_company(
 
     update_data = data.dict(exclude_unset=True)
 
-    # Recompute max project value if past_projects updated
     if "past_projects" in update_data:
         update_data["past_projects"] = [
             p.dict() if hasattr(p, "dict") else p
@@ -118,10 +103,8 @@ def update_company(
     return company
 
 
-# ── DELETE /companies/{id} ─────────────────────────────────────
 @router.delete("/{company_id}", response_model=schemas.SuccessResponse)
 def delete_company(company_id: int, db: Session = Depends(get_db)):
-    """Delete a company profile."""
     company = db.query(models.CompanyProfile).filter(
         models.CompanyProfile.id == company_id
     ).first()
