@@ -1,4 +1,3 @@
-/* ── JustBidIt API Client ───────────────────────────────────── */
 const API = "http://localhost:8000";
 
 const state = {
@@ -43,7 +42,6 @@ function redirectIfLoggedIn() {
   if (getToken()) { window.location.href = "dashboard.html"; }
 }
 
-/* ── Helpers ────────────────────────────────────────────────── */
 function showToast(msg, type = "success") {
   document.querySelector(".toast")?.remove();
   const el = document.createElement("div");
@@ -54,10 +52,17 @@ function showToast(msg, type = "success") {
 }
 
 async function apiCall(endpoint, options = {}) {
-  const res = await fetch(`${API}${endpoint}`, {
+  const isFormData = options.body instanceof FormData;
+  const headers = { ...authHeaders(), ...(options.headers || {}) };
+  if (isFormData) {
+    delete headers['Content-Type'];
+  }
+  const fetchOptions = {
     ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) }
-  });
+    headers
+  };
+  
+  const res = await fetch(`${API}${endpoint}`, fetchOptions);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `Request failed (${res.status})`);
@@ -65,7 +70,6 @@ async function apiCall(endpoint, options = {}) {
   return res.json();
 }
 
-/* ── Auth ───────────────────────────────────────────────────── */
 async function register(email, fullName, password) {
   const data = await apiCall("/auth/register", {
     method: "POST",
@@ -93,7 +97,6 @@ function logout() {
   window.location.href = "login.html";
 }
 
-/* ── Tenders ────────────────────────────────────────────────── */
 async function uploadTender(file) {
   const form = new FormData();
   form.append("file", file);
@@ -104,9 +107,13 @@ async function uploadTender(file) {
 }
 
 async function getTender(id) { return apiCall(`/tenders/${id}`); }
-async function listTenders() { return apiCall("/tenders"); }
+async function listTenders() { 
+  console.log("Calling listTenders API...");
+  const data = await apiCall("/tenders");
+  console.log("API Response:", data);
+  return data;
+}
 
-/* ── Company ────────────────────────────────────────────────── */
 async function saveCompany(payload) {
   const data = await apiCall("/companies", {
     method: "POST",
@@ -120,16 +127,19 @@ async function saveCompany(payload) {
 
 async function getCompany(id) { return apiCall(`/companies/${id}`); }
 
-/* ── Compliance ─────────────────────────────────────────────── */
 async function checkCompliance(tenderId, companyId) {
-  return apiCall("/compliance/score", {
+  console.log("checkCompliance called with:", { tenderId, companyId });
+  const payload = { tender_id: Number(tenderId), company_id: Number(companyId) };
+  console.log("Sending payload:", payload);
+  const data = await apiCall("/compliance/score", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tender_id: Number(tenderId), company_id: Number(companyId) }),
+    body: JSON.stringify(payload),
   });
+  console.log("Compliance response received:", data);
+  return data;
 }
 
-/* ── Draft & Copilot ────────────────────────────────────────── */
 async function generateDraft(tenderId, companyId, ctx = null) {
   const body = { tender_id: Number(tenderId), company_id: Number(companyId) };
   if (ctx) body.additional_context = ctx;
@@ -153,7 +163,6 @@ async function askCopilot(tenderId, question, sessionId = null) {
   return data;
 }
 
-/* ── Health ─────────────────────────────────────────────────── */
 async function healthCheck() {
   try { const r = await fetch(`${API}/health`); return r.ok; }
   catch { return false; }

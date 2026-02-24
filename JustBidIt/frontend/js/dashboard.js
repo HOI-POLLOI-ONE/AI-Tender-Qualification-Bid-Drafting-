@@ -1,4 +1,3 @@
-/* ── JustBidIt Dashboard Logic ──────────────────────────────── */
 
 const tagLists = { certList: [], docList: [] };
 let projectList = [];
@@ -13,12 +12,6 @@ function addProject() {
 
   projectList.push({ name, client, value: value || 0, year: year || new Date().getFullYear() });
   renderProjects();
-
-  // Clear inputs
-  document.getElementById("projName").value   = "";
-  document.getElementById("projClient").value = "";
-  document.getElementById("projValue").value  = "";
-  document.getElementById("projYear").value   = "";
 }
 
 function removeProject(index) {
@@ -46,12 +39,21 @@ function renderProjects() {
 
 /* ── Init ────────────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
-  if (!requireAuth()) return;
+  console.log("=== Dashboard Loading ===");
+  if (!requireAuth()) {
+    console.error("Not authenticated");
+    return;
+  }
+  console.log("✓ Authenticated");
   loadState();
+  console.log("✓ State loaded:", state);
   initUser();
   checkAPI();
   loadSavedCompanyForm();
   if (state.tenderId) restoreTenderBadge();
+  // Pre-load history data
+  loadHistory();
+  console.log("=== Dashboard Ready ===");
 });
 
 function initUser() {
@@ -75,6 +77,7 @@ async function checkAPI() {
 
 /* ── Page navigation ─────────────────────────────────────────── */
 function showPage(name) {
+  console.log("Showing page:", name);
   ["analyze","company","history"].forEach(p => {
     document.getElementById(`page-${p}`).style.display = p === name ? "flex" : "none";
   });
@@ -83,13 +86,15 @@ function showPage(name) {
   const breadcrumbs = { analyze: "Analyze", company: "Company", history: "History" };
   document.getElementById("topbarTitle").textContent = labels[name];
   document.getElementById("breadcrumbCurrent").textContent = breadcrumbs[name];
-  // Highlight sidebar item
   document.querySelectorAll(".nav-item").forEach(el => {
     if (el.textContent.toLowerCase().includes(name === "analyze" ? "analyze" : name)) {
       el.classList.add("active");
     }
   });
-  if (name === "history") loadHistory();
+  if (name === "history") {
+    console.log("Loading history...");
+    loadHistory();
+  }
 }
 
 /* ── Profile dropdown ─────────────────────────────────────────── */
@@ -132,8 +137,6 @@ async function processUpload(file) {
     const elig = info.eligibility || {};
 
     document.getElementById("tenderLoadedBadge").style.display = "inline-block";
-
-    // Populate summary
     document.getElementById("tenderSummaryContent").innerHTML = buildInfoTable([
       ["Title",          info.title || data.title || "—"],
       ["Authority",      info.issuing_authority || "—"],
@@ -145,8 +148,6 @@ async function processUpload(file) {
       ["Bid Security",   elig.bid_security || "—"],
     ]);
     document.getElementById("tenderSummary").style.display = "block";
-
-    // Reset zone
     zone.innerHTML = `
       <input type="file" id="fileInput" hidden accept=".pdf" onchange="onFileSelect(event)">
       <div class="upload-zone-icon" style="border-color:var(--border-green);color:var(--green);">PDF</div>
@@ -173,9 +174,10 @@ function restoreTenderBadge() {
   document.getElementById("tenderLoadedBadge").style.display = "inline-block";
 }
 
-/* ── Compliance ──────────────────────────────────────────────── */
 async function runCompliance() {
   loadState();
+  console.log("Running compliance check with tenderId:", state.tenderId, "companyId:", state.companyId);
+  
   if (!state.tenderId)  { showToast("Upload a tender PDF first", "error"); return; }
   if (!state.companyId) { showToast("Save your company profile first", "error"); showPage("company"); return; }
 
@@ -188,12 +190,20 @@ async function runCompliance() {
     </div>`;
 
   try {
+    console.log("Calling checkCompliance API...");
     const d = await checkCompliance(state.tenderId, state.companyId);
+    console.log("Compliance data received:", d);
+    
+    if (!d) {
+      throw new Error("No data received from compliance check");
+    }
+    
     renderCompliance(d);
     showToast("Compliance check complete", "success");
   } catch (err) {
+    console.error("Compliance check error:", err);
     document.getElementById("complianceBody").innerHTML =
-      `<div class="empty-state"><h4 style="color:var(--red);">Check Failed</h4><p>${err.message}</p></div>`;
+      `<div class="empty-state"><h4 style="color:var(--red);">Check Failed</h4><p>${err.message || "Unknown error"}</p><p style="font-size:0.75rem;color:var(--text-3);">Check browser console for details</p></div>`;
     showToast(err.message, "error");
   }
   btn.disabled = false; btn.textContent = "Run Check";
@@ -411,13 +421,21 @@ function removeTag(listKey, inputId, wrapId, idx) {
 /* ── History ─────────────────────────────────────────────────── */
 async function loadHistory() {
   const body = document.getElementById("historyBody");
-  body.innerHTML = `<div style="padding:40px;text-align:center;"><div class="spinner" style="margin:0 auto;"></div></div>`;
+  body.innerHTML = `<div style="padding:40px;text-align:center;"><div class="spinner" style="margin:0 auto;"></div><p>Loading tenders...</p></div>`;
   try {
+    console.log("Loading history...");
     const list = await listTenders();
-    if (!list.length) {
+    console.log("Tenders received:", list, "Type:", typeof list, "Is Array:", Array.isArray(list), "Length:", list?.length);
+    if (!Array.isArray(list)) {
+      console.error("Expected array, got:", typeof list);
+      body.innerHTML = `<div class="empty-state"><h4 style="color:var(--red);">Error: Invalid data</h4></div>`;
+      return;
+    }
+    if (list.length === 0) {
       body.innerHTML = `<div class="empty-state"><h4>No tenders yet</h4><p>Upload your first tender from the Analyze tab.</p></div>`;
       return;
     }
+    console.log("Rendering", list.length, "tenders");
     body.innerHTML = list.map(t => `
       <div class="history-item" onclick="selectTender(${t.id})">
         <div>
@@ -428,7 +446,8 @@ async function loadHistory() {
       </div>
     `).join("");
   } catch (err) {
-    body.innerHTML = `<div class="empty-state"><h4 style="color:var(--red);">Failed to load</h4><p>${err.message}</p></div>`;
+    console.error("Error loading history:", err);
+    body.innerHTML = `<div class="empty-state"><h4 style="color:var(--red);">Error loading tenders</h4><p>${err?.message || "Unknown error"}</p><p style="font-size:0.75rem;color:var(--text-3);">Check browser console for details</p></div>`;
   }
 }
 
