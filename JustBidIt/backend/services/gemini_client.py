@@ -13,9 +13,9 @@ PROMPT_DIR   = os.path.join(os.path.dirname(__file__), "..", "prompts")
 client = None
 if GROQ_API_KEY and GROQ_API_KEY != "your_groq_api_key_here":
     client = Groq(api_key=GROQ_API_KEY)
-    print("✓Groq API configured successfully")
+    print("Groq API configured successfully")
 else:
-    print("(X)GROQ_API_KEY not set. Add it to .env file.")
+    print("GROQ_API_KEY not set. Add it to .env file.")
 
 
 def _load_prompt(filename: str) -> str:
